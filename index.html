@@ -78,55 +78,62 @@
 
 <script>
     function absen(jenis) {
-        let fileInput = document.getElementById("fileInput");
-        if (!fileInput.files.length) {
-            showPopup("Foto dulu queen!!", true);
+    let fileInput = document.getElementById("fileInput");
+    if (!fileInput.files.length) {
+        showPopup("Foto dulu queen!!", true);
+        return;
+    }
+
+    let file = fileInput.files[0];
+    let reader = new FileReader();
+
+    reader.onload = function (e) {
+        let waktu = new Date();
+        let hariSekarang = waktu.getDay();
+        let tanggal = waktu.toLocaleDateString("id-ID");
+
+        let history = JSON.parse(localStorage.getItem("absensi")) || [];
+
+        let lastReset = localStorage.getItem("lastReset") || "";
+        if (hariSekarang === 1 && lastReset !== tanggal) { 
+            history = []; 
+            localStorage.setItem("lastReset", tanggal);
+        }
+
+        let sudahMasuk = history.some(item => item.tanggal === tanggal && item.jenis === "Masuk");
+        let sudahPulang = history.some(item => item.tanggal === tanggal && item.jenis === "Pulang");
+
+        if ((jenis === "Masuk" && sudahMasuk) || (jenis === "Pulang" && sudahPulang)) {
+            showPopup("Hari ini sudah absen " + jenis.toLowerCase() + ", tunggu besok ya!", true);
             return;
         }
-        
-        let file = fileInput.files[0];
-        let reader = new FileReader();
-        
-        reader.onload = function(e) {
-            let waktu = new Date();
-            let hariSekarang = waktu.getDay(); // 0 = Minggu, 1 = Senin, 2 = Selasa, ...
-            let tanggal = waktu.toLocaleDateString("id-ID");
 
-            let history = JSON.parse(localStorage.getItem("absensi")) || [];
+        let hari = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"][waktu.getDay()];
+        let waktuStr = waktu.toLocaleTimeString("id-ID");
 
-            // Cek apakah ini hari Senin dan perlu reset riwayat
-            let lastReset = localStorage.getItem("lastReset") || "";
-            if (hariSekarang === 1 && lastReset !== tanggal) { 
-                history = []; 
-                localStorage.setItem("lastReset", tanggal);
-            }
+        history.unshift({ jenis, hari, tanggal, waktuStr, foto: e.target.result });
 
-            // Cek apakah sudah absen masuk & pulang hari ini
-            let sudahMasuk = history.some(item => item.tanggal === tanggal && item.jenis === "Masuk");
-            let sudahPulang = history.some(item => item.tanggal === tanggal && item.jenis === "Pulang");
+        localStorage.setItem("absensi", JSON.stringify(history));
+        tampilkanHistory();
 
-            if ((jenis === "Masuk" && sudahMasuk) || (jenis === "Pulang" && sudahPulang)) {
-                showPopup("Hari ini sudah absen " + jenis.toLowerCase() + ", tunggu besok ya!", true);
-                return;
-            }
+        fileInput.value = "";
 
-            let hari = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"][waktu.getDay()];
-            let waktuStr = waktu.toLocaleTimeString("id-ID");
+        // Kirim notifikasi ke WhatsApp
+        let waMessage = `📢 Absensi Baru!\n📅 ${hari}, ${tanggal}\n🕒 ${waktuStr}\n✍️ Jenis: ${jenis}`;
+        let waLink = `https://api.callmebot.com/whatsapp.php?phone=62895398620405&text=${encodeURIComponent(waMessage)}&apikey=8431580`;
 
-            history.unshift({ jenis, hari, tanggal, waktuStr, foto: e.target.result });
+        fetch(waLink)
+            .then(response => console.log("Notifikasi WhatsApp terkirim"))
+            .catch(error => console.error("Gagal mengirim WhatsApp:", error));
 
-            localStorage.setItem("absensi", JSON.stringify(history));
-            tampilkanHistory();
+        setTimeout(() => {
+            showPopup(jenis === "Masuk" ? "Semangat Queen!" : "Hati-hati ya Queen!");
+        }, 1000);
+    };
 
-            fileInput.value = "";
+    reader.readAsDataURL(file);
+}
 
-            setTimeout(() => {
-                showPopup(jenis === "Masuk" ? "Semangat Queen!" : "Hati-hati ya Queen!");
-            }, 1000);
-        };
-        
-        reader.readAsDataURL(file);
-    }
     function tampilkanHistory() {
     let history = JSON.parse(localStorage.getItem("absensi")) || [];
     let historyContainer = document.getElementById("history");
