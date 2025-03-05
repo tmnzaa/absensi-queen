@@ -11,6 +11,7 @@
             display: flex; justify-content: center; align-items: center;
             height: 100vh; animation: fadeIn 1s ease-in-out;
             overflow: hidden;
+            flex-direction: column;
         }
         @keyframes fadeIn { 
             from { opacity: 0; transform: translateY(-10px); } 
@@ -67,18 +68,29 @@
         }
         .popup {
             position: fixed;
-            top: 50%; left: 50%; 
-            transform: translate(-50%, -50%);
+            top: 10px; left: 50%; 
+            transform: translateX(-50%);
             background: #d88eff; color: white; 
             padding: 12px 20px;
             border-radius: 20px; font-weight: bold; 
             display: none;
             z-index: 9999;
+            width: auto;
+            max-width: 80%;
+        }
+        .popup.error {
+            background: #ff4d4d;
+        }
+        .popup.success {
+            background: #9b59b6;
         }
 
     </style>
 </head>
 <body>
+
+<!-- Notifikasi Pop-up -->
+<div id="popup" class="popup"></div>
 
 <div class="container">
     <h1>Absensi Queen</h1>
@@ -92,9 +104,6 @@
         <div id="history"></div>
     </div>
 </div>
-
-<!-- Notifikasi Pop-up -->
-<div id="popup" class="popup"></div>
 
 <script>
     function absen(jenis) {
@@ -148,7 +157,7 @@
                     .catch(error => console.error("Gagal mengirim WhatsApp:", error));
 
                 setTimeout(() => {
-                    showPopup(jenis === "Masuk" ? "Semangat Queen!" : "Hati-hati ya Queen!");
+                    showPopup(jenis === "Masuk" ? "Semangat Queen!" : "Hati-hati ya Queen!", false);
                 }, 1000);
             });
         };
@@ -223,7 +232,7 @@
     function showPopup(message, error = false) {
         let popup = document.getElementById("popup");
         popup.innerText = message;
-        popup.style.background = error ? "#ff4d4d" : "#9b59b6";
+        popup.className = "popup " + (error ? "error" : "success");
         popup.style.display = "block";
         setTimeout(() => { popup.style.display = "none"; }, 5000);
     }
