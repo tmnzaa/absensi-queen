@@ -76,46 +76,32 @@
     <img src="https://cdn-icons-png.flaticon.com/512/847/847969.png" alt="Admin">
 </div>
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
-
-    const firebaseConfig = {
-        apiKey: "AIzaSyAiU4JC5YHJiCskbbDTkN3hLYMykBwtLLg",
-        authDomain: "absensiqueen.firebaseapp.com",
-        projectId: "absensiqueen",
-        storageBucket: "absensiqueen.appspot.com",
-        messagingSenderId: "451924672124",
-        appId: "1:451924672124:web:514a3aab8adec2a751d3f9",
-        measurementId: "G-ZRLV6Z3V13"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    async function absen(jenis) {
+<script>
+    function absen(jenis) {
         let fileInput = document.getElementById("fileInput");
         if (!fileInput.files.length) {
             showPopup("Foto dulu queen!!", true);
             return;
         }
-
+        
         let file = fileInput.files[0];
         let reader = new FileReader();
-
-        reader.onload = async function(e) {
+        
+        reader.onload = function(e) {
             let waktu = new Date();
-            let hariSekarang = waktu.getDay();
+            let hariSekarang = waktu.getDay(); // 0 = Minggu, 1 = Senin, 2 = Selasa, ...
             let tanggal = waktu.toLocaleDateString("id-ID");
 
             let history = JSON.parse(localStorage.getItem("absensi")) || [];
 
+            // Cek apakah ini hari Senin dan perlu reset riwayat
             let lastReset = localStorage.getItem("lastReset") || "";
             if (hariSekarang === 1 && lastReset !== tanggal) { 
                 history = []; 
                 localStorage.setItem("lastReset", tanggal);
             }
 
+            // Cek apakah sudah absen masuk & pulang hari ini
             let sudahMasuk = history.some(item => item.tanggal === tanggal && item.jenis === "Masuk");
             let sudahPulang = history.some(item => item.tanggal === tanggal && item.jenis === "Pulang");
 
@@ -127,64 +113,62 @@
             let hari = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"][waktu.getDay()];
             let waktuStr = waktu.toLocaleTimeString("id-ID");
 
-            let newData = { jenis, hari, tanggal, waktu: waktuStr, foto: e.target.result };
-            history.unshift(newData);
+            history.unshift({ jenis, hari, tanggal, waktuStr, foto: e.target.result });
 
             localStorage.setItem("absensi", JSON.stringify(history));
-
-            try {
-                await addDoc(collection(db, "absensi"), newData);
-            } catch (error) {
-                console.error("Gagal menyimpan ke Firebase:", error);
-            }
-
             tampilkanHistory();
-            fileInput.value = "";
-            showPopup(jenis === "Masuk" ? "Semangat Queen!" : "Hati-hati ya Queen!");
-        };
 
+            fileInput.value = "";
+
+            setTimeout(() => {
+                showPopup(jenis === "Masuk" ? "Semangat Queen!" : "Hati-hati ya Queen!");
+            }, 1000);
+        };
+        
         reader.readAsDataURL(file);
     }
+    function tampilkanHistory() {
+    let history = JSON.parse(localStorage.getItem("absensi")) || [];
+    let historyContainer = document.getElementById("history");
+    historyContainer.innerHTML = "";
 
-    async function tampilkanHistory() {
-        let historyContainer = document.getElementById("history");
-        historyContainer.innerHTML = "<p style='text-align:center; color:#888;'>Memuat data...</p>";
-
-        let history = JSON.parse(localStorage.getItem("absensi")) || [];
-
-        try {
-            const q = query(collection(db, "absensi"), orderBy("tanggal", "desc"));
-            const querySnapshot = await getDocs(q);
-
-            history = querySnapshot.docs.map(doc => doc.data());
-        } catch (error) {
-            console.error("Gagal mengambil data dari Firebase:", error);
-        }
-
-        historyContainer.innerHTML = "";
-
-        if (history.length === 0) {
-            historyContainer.innerHTML = "<p style='text-align:center; color:#888;'>Belum ada data absensi</p>";
-            return;
-        }
-
-        let lastDate = "";
-        history.forEach((item, index) => {
-            if (item.tanggal !== lastDate) {
-                if (index !== 0) historyContainer.innerHTML += "<hr style='border: 1px dashed pink; margin: 10px 0;'>";
-                historyContainer.innerHTML += `<div style="margin-bottom: 5px; font-weight: bold; color: #ff66a3;">📅 ${item.hari}, ${item.tanggal}</div>`;
-                lastDate = item.tanggal;
-            }
-            historyContainer.innerHTML += `
-                <div style="display: flex; align-items: center; gap: 10px; margin: 8px 0; padding: 8px; background: #fff5f8; border-radius: 10px;">
-                    <img src="${item.foto}" alt="Foto Absen" style="width: 45px; height: 45px; border-radius: 50%; border: 2px solid pink;">
-                    <div style="flex-grow: 1;">
-                        <b style="color: #333;">${item.jenis}</b> - <span style="color: #666;">${item.waktu}</span>
-                    </div>
-                </div>
-            `;
-        });
+    if (history.length === 0) {
+        historyContainer.innerHTML = "<p style='text-align:center; color:#888;'>Belum ada data absensi</p>";
+        return;
     }
+
+    let today = new Date();
+    let dayOfWeek = today.getDay(); // 0 = Minggu, 1 = Senin, ..., 6 = Sabtu
+    let tanggalHariIni = today.toLocaleDateString("id-ID");
+
+    // Ambil tanggal terakhir reset
+    let lastResetDate = localStorage.getItem("lastResetDate") || null;
+
+    // Cek apakah hari ini Senin & belum pernah direset hari ini
+    if (dayOfWeek === 1 && lastResetDate !== tanggalHariIni) {
+        console.log("Reset dilakukan karena sudah hari Senin!");
+        history = []; // Reset data hanya di hari Senin pertama
+        localStorage.setItem("absensi", JSON.stringify(history));
+        localStorage.setItem("lastResetDate", tanggalHariIni); // Simpan tanggal reset terakhir
+    }
+
+    let lastDate = "";
+    history.forEach((item, index) => {
+        if (item.tanggal !== lastDate) {
+            if (index !== 0) historyContainer.innerHTML += "<hr style='border: 1px dashed pink; margin: 10px 0;'>";
+            historyContainer.innerHTML += `<div style="margin-bottom: 5px; font-weight: bold; color: #ff66a3;">📅 ${item.hari}, ${item.tanggal}</div>`;
+            lastDate = item.tanggal;
+        }
+        historyContainer.innerHTML += `
+            <div style="display: flex; align-items: center; gap: 10px; margin: 8px 0; padding: 8px; background: #fff5f8; border-radius: 10px;">
+                <img src="${item.foto}" alt="Foto Absen" style="width: 45px; height: 45px; border-radius: 50%; border: 2px solid pink;">
+                <div style="flex-grow: 1;">
+                    <b style="color: #333;">${item.jenis}</b> - <span style="color: #666;">${item.waktuStr}</span>
+                </div>
+            </div>
+        `;
+    });
+}
 
     function showPopup(message, error = false) {
         let popup = document.getElementById("popup");
@@ -195,7 +179,6 @@
     }
 
     document.addEventListener("DOMContentLoaded", tampilkanHistory);
-    window.absen = absen;
 </script>
 
 </body>
