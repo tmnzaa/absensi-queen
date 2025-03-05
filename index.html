@@ -59,8 +59,8 @@
     <h1>Absensi Queen</h1>
     <p>Upload foto untuk absen masuk atau pulang.</p>
     <input type="file" id="fileInput">
-    <button class="btn masuk" onclick="absen('Masuk')">Absen Masuk</button>
-    <button class="btn pulang" onclick="absen('Pulang')">Absen Pulang</button>
+    <button class="btn masuk" onclick="absen('Masuk')">Absen Masukk</button>
+    <button class="btn pulang" onclick="absen('Pulang')">Absen Pulangg</button>
     
     <div class="history">
         <h3>Riwayat Absensi</h3>
@@ -103,7 +103,7 @@
             fileInput.value = "";
 
             // Kirim notifikasi ke WhatsApp dengan link foto
-            let waMessage = `📢 Absensi Baru!\n📅 ${hari}, ${tanggal}\n🕒 ${waktuStr}\n✍️ Jenis: ${jenis}\n🖼️ Foto: ${imgurLink}`;
+            let waMessage = `📢 Absensi Queen!\n📅 ${hari}, ${tanggal}\n🕒 ${waktuStr}\n✍️ Status: ${jenis}\n🖼️ Foto: ${imgurLink}`;
             let waLink = `https://api.callmebot.com/whatsapp.php?phone=62895398620405&text=${encodeURIComponent(waMessage)}&apikey=8431580`;
 
             fetch(waLink)
@@ -135,7 +135,7 @@ function uploadToImgur(imageBase64, callback) {
             callback(data.data.link); // Kirim link foto ke WhatsApp
         } else {
             console.error("Gagal upload ke Imgur:", data);
-            showPopup("Gagal upload foto 😞", true);
+            showPopup("Gagal upload foto", true);
         }
     })
     .catch(error => console.error("Error upload ke Imgur:", error));
