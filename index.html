@@ -203,9 +203,13 @@
         // Ambil tanggal terakhir reset
         let lastResetDate = localStorage.getItem("lastResetDate") || null;
 
-        // Reset history hanya jika hari ini Senin dan belum direset
-        if (dayOfWeek === 1 && lastResetDate !== tanggalHariIni) {
-            console.log("Reset dilakukan karena sudah hari Senin!");
+        // Jika sudah lebih dari 7 hari sejak reset terakhir, reset history
+        let sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        let lastResetDateObj = lastResetDate ? new Date(lastResetDate) : null;
+
+        if (lastResetDateObj && lastResetDateObj < sevenDaysAgo) {
+            console.log("Reset dilakukan karena sudah lebih dari 7 hari!");
             history = [];
             localStorage.setItem("absensi", JSON.stringify(history));
             localStorage.setItem("lastResetDate", tanggalHariIni);
